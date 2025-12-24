@@ -438,6 +438,7 @@ func main() {
 	logFilePath := pflag.String("log-file", "", "Path to log file")
 	port := pflag.String("port", "8080", "Port to listen on")
 	endpoint := pflag.String("endpoint", "/mcp", "Endpoint path for MCP requests")
+	stateless := pflag.Bool("stateless", false, "Enable stateless mode (no session management, new transport per request)")
 	pflag.Parse()
 
 	var actualLogPath string
@@ -459,13 +460,19 @@ func main() {
 	log.SetOutput(logFile)
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 
-	log.Infof("Starting MCP server with streamable HTTP transport on port %s, endpoint %s", *port, *endpoint)
+	log.Infof("Starting MCP server with streamable HTTP transport on port %s, endpoint %s, stateless mode: %v", *port, *endpoint, *stateless)
 	
 	mcpServer := NewMCPServer()
-	httpServer := server.NewStreamableHTTPServer(
-		mcpServer,
-		server.WithEndpointPath(*endpoint),
-	)
+	
+	var httpServerOpts []server.StreamableHTTPOption
+	httpServerOpts = append(httpServerOpts, server.WithEndpointPath(*endpoint))
+	
+	if *stateless {
+		httpServerOpts = append(httpServerOpts, server.WithStateLess(true))
+		log.Infof("Stateless mode enabled: no session management, each request is independent")
+	}
+	
+	httpServer := server.NewStreamableHTTPServer(mcpServer, httpServerOpts...)
 
 	addr := ":" + *port
 	log.Infof("Server listening on %s%s", addr, *endpoint)

@@ -229,4 +229,25 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This project is licensed under the Apache-2.0 License.
-# Fix image URLs
+
+## Docker Deployment (Streamable HTTP Server)
+
+```dockerfile
+FROM golang:1.23-alpine AS builder
+RUN apk add --no-cache git
+RUN go install github.com/mikanbox/diagram-as-code/cmd/awsdac-mcp-server-streamable@latest
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /go/bin/awsdac-mcp-server-streamable .
+EXPOSE 8080
+CMD ["./awsdac-mcp-server-streamable"]
+```
+
+```bash
+docker build -t awsdac-mcp-server-streamable .
+docker run -p 8080:8080 awsdac-mcp-server-streamable
+```
+
+Server will be available at `http://localhost:8080/mcp`
