@@ -208,22 +208,6 @@ TECHNICAL DETAILS:
 		),
 	), withPanicRecovery("generateDiagram", handleGenerateDiagram))
 
-	mcpServer.AddTool(mcp.NewTool(string(GENERATE_DIAGRAM_TO_FILE),
-		mcp.WithDescription(GENERATE_DIAGRAM_TO_FILE_DESC),
-		mcp.WithString("yamlContent",
-			mcp.Description("Complete YAML specification for the AWS architecture diagram (same format as generateDiagram)"),
-			mcp.Required(),
-		),
-		mcp.WithString("outputFilePath",
-			mcp.Description("Path where the generated PNG file should be saved. Can be relative or absolute path. Parent directories will be created if they don't exist."),
-			mcp.Required(),
-		),
-	), withPanicRecovery("generateDiagramToFile", handleGenerateDiagramToFile))
-
-	mcpServer.AddTool(mcp.NewTool(string(GET_DIAGRAM_AS_CODE_FORMAT),
-		mcp.WithDescription(GET_FORMAT_DESC),
-	), withPanicRecovery("getDiagramAsCodeFormat", handleGenerateDacFromUserRequirements))
-
 	return mcpServer
 }
 
