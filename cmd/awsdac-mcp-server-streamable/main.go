@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -17,30 +16,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:embed prompts/*
-var promptsFS embed.FS
-
 var (
 	writeFileFunc = os.WriteFile
 	readFileFunc  = os.ReadFile
 )
 
-type ToolName string
-
 const (
-	GENERATE_DIAGRAM           ToolName = "generateDiagram"
-	GENERATE_DIAGRAM_TO_FILE   ToolName = "generateDiagramToFile"
-	GET_DIAGRAM_AS_CODE_FORMAT ToolName = "getDiagramAsCodeFormat"
-)
-
-const (
-	USER_REQUIREMENTS_TEMPLATE_FILE = "prompts/generate_dac_from_user_requirements.txt"
-)
-
-const (
-	GENERATE_DIAGRAM_DESC           = "Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications."
-	GENERATE_DIAGRAM_TO_FILE_DESC   = "Generate AWS architecture diagrams from YAML and save directly to file."
-	GET_FORMAT_DESC                 = "Get Diagram-as-code format specification, examples, and best practices."
+	GENERATE_DIAGRAM_DESC = "Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications."
 )
 
 func NewMCPServer() *server.MCPServer {
@@ -364,4 +346,4 @@ func main() {
 		log.Fatalf("Server error: %v", err)
 	}
 }
-
+	httpServerOpts = append(httpServerOpts, server.WithEndpointPath(*endpoint))
