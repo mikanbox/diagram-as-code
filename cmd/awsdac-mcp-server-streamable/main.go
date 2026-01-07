@@ -50,20 +50,30 @@ func handleGenerateDiagram(ctx context.Context, request mcp.CallToolRequest) (*m
 		}, nil
 	}
 
-	tempDir, _ := os.MkdirTemp("", "awsdac-mcp")
+	tempDir, err := os.MkdirTemp("", "awsdac-mcp")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp directory: %v", err)
+	}
 	defer os.RemoveAll(tempDir)
 
 	inputFile := filepath.Join(tempDir, "input.yaml")
-	os.WriteFile(inputFile, []byte(yamlContent), 0644)
+	if err := os.WriteFile(inputFile, []byte(yamlContent), 0644); err != nil {
+		return nil, fmt.Errorf("failed to write input file: %v", err)
+	}
 
 	outputFile := filepath.Join(tempDir, "output.png")
 
 	opts := &ctl.CreateOptions{
 		OverwriteMode: ctl.Force,
 	}
-	ctl.CreateDiagramFromDacFile(inputFile, &outputFile, opts)
+	if err := ctl.CreateDiagramFromDacFile(inputFile, &outputFile, opts); err != nil {
+		return nil, fmt.Errorf("failed to create diagram: %v", err)
+	}
 
-	diagramData, _ := os.ReadFile(outputFile)
+	diagramData, err := os.ReadFile(outputFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read generated diagram: %v", err)
+	}
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
