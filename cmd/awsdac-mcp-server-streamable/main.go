@@ -21,6 +21,12 @@ var (
 	readFileFunc  = os.ReadFile
 )
 
+type ToolName string
+
+const (
+	GENERATE_DIAGRAM ToolName = "generateDiagram"
+)
+
 const (
 	GENERATE_DIAGRAM_DESC = "Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications."
 )
@@ -69,25 +75,9 @@ OUTPUT: Base64-encoded PNG images suitable for embedding in responses`),
 		mcp.WithDescription(GENERATE_DIAGRAM_DESC),
 		mcp.WithString("yamlContent",
 			mcp.Required(),
-			mcp.Description("Complete YAML specification for the AWS architecture diagram"),
+			mcp.Description("YAML specification for AWS architecture diagram"),
 		),
 	), withPanicRecovery("generateDiagram", handleGenerateDiagram))
-
-	mcpServer.AddTool(mcp.NewTool(string(GENERATE_DIAGRAM_TO_FILE),
-		mcp.WithDescription(GENERATE_DIAGRAM_TO_FILE_DESC),
-		mcp.WithString("yamlContent",
-			mcp.Required(),
-			mcp.Description("Complete YAML specification for the AWS architecture diagram"),
-		),
-		mcp.WithString("outputFilePath",
-			mcp.Required(),
-			mcp.Description("Path where the generated PNG file should be saved"),
-		),
-	), withPanicRecovery("generateDiagramToFile", handleGenerateDiagramToFile))
-
-	mcpServer.AddTool(mcp.NewTool(string(GET_DIAGRAM_AS_CODE_FORMAT),
-		mcp.WithDescription(GET_FORMAT_DESC),
-	), withPanicRecovery("getDiagramAsCodeFormat", handleGenerateDacFromUserRequirements))
 
 	return mcpServer
 }
@@ -158,90 +148,6 @@ func handleGenerateDiagram(
 	}, nil
 }
 
-func handleGenerateDiagramToFile(
-	ctx context.Context,
-	request mcp.CallToolRequest,
-) (*mcp.CallToolResult, error) {
-	arguments := request.GetArguments()
-
-	yamlContentArg, exists := arguments["yamlContent"]
-	if !exists {
-		return nil, fmt.Errorf("missing yamlContent argument")
-	}
-	yamlContent, ok := yamlContentArg.(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid yamlContent argument")
-	}
-
-	outputFilePathArg, exists := arguments["outputFilePath"]
-	if !exists {
-		return nil, fmt.Errorf("missing outputFilePath argument")
-	}
-	outputFilePath, ok := outputFilePathArg.(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid outputFilePath argument")
-	}
-
-	outputDir := filepath.Dir(outputFilePath)
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return nil, fmt.Errorf("failed to create output directory: %v", err)
-	}
-
-	tempDir, err := os.MkdirTemp("", "awsdac-mcp")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp directory: %v", err)
-	}
-	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			log.Printf("Failed to remove temp directory: %v", err)
-		}
-	}()
-
-	inputFile := filepath.Join(tempDir, "input.yaml")
-	if err := writeFileFunc(inputFile, []byte(yamlContent), 0o644); err != nil {
-		return nil, fmt.Errorf("failed to write input file: %v", err)
-	}
-
-	opts := &ctl.CreateOptions{
-		OverwriteMode: ctl.NoOverwrite,
-	}
-	if err := createDiagramSafely(inputFile, &outputFilePath, opts); err != nil {
-		return nil, fmt.Errorf("failed to create diagram: %v", err)
-	}
-
-	if _, err := os.Stat(outputFilePath); err != nil {
-		return nil, fmt.Errorf("failed to verify generated diagram file: %v", err)
-	}
-
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: fmt.Sprintf("Diagram successfully generated and saved to: %s", outputFilePath),
-			},
-		},
-	}, nil
-}
-
-func handleGenerateDacFromUserRequirements(
-	ctx context.Context,
-	request mcp.CallToolRequest,
-) (*mcp.CallToolResult, error) {
-	templateContent, err := readPromptFile(USER_REQUIREMENTS_TEMPLATE_FILE)
-	if err != nil {
-		return nil, err
-	}
-
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: string(templateContent),
-			},
-		},
-	}, nil
-}
-
 func withPanicRecovery(handlerName string, handler server.ToolHandlerFunc) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
 		defer func() {
@@ -291,14 +197,6 @@ func createDiagramSafely(inputFile string, outputFile *string, opts *ctl.CreateO
 	return ctl.CreateDiagramFromDacFile(inputFile, outputFile, opts)
 }
 
-func readPromptFile(filePath string) ([]byte, error) {
-	content, err := promptsFS.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read embedded prompt file %s: %v", filePath, err)
-	}
-	return content, nil
-}
-
 func main() {
 	logFilePath := pflag.String("log-file", "", "Path to log file")
 	port := pflag.String("port", "8080", "Port to listen on")
@@ -346,4 +244,3 @@ func main() {
 		log.Fatalf("Server error: %v", err)
 	}
 }
-	httpServerOpts = append(httpServerOpts, server.WithEndpointPath(*endpoint))
