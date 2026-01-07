@@ -38,13 +38,13 @@ func corsMiddleware(port string) func(http.Handler) http.Handler {
 func handleGenerateDiagram(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := request.GetArguments()
 
-	yamlContent, ok := args["yamlContent"].(string)
+	yamlContent, ok := args["yamlcontent"].(string)
 	if !ok {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.TextContent{
 					Type: "text",
-					Text: "Error: Invalid argument. 'yamlContent' must be a string.",
+					Text: "Error: Invalid argument. 'yamlcontent' must be a string.",
 				},
 			},
 		}, nil
@@ -90,6 +90,37 @@ func handleGenerateDiagram(ctx context.Context, request mcp.CallToolRequest) (*m
 	}, nil
 }
 
+
+func handleAddTool(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	args := request.GetArguments()
+
+	a, aOk := args["a"].(float64)
+	b, bOk := args["b"].(float64)
+
+	if !aOk || !bOk {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{
+					Type: "text",
+					Text: "Error: Invalid arguments. Both 'a' and 'b' must be numbers.",
+				},
+			},
+		}, nil
+	}
+
+	result := int(a) + int(b)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			mcp.TextContent{
+				Type: "text",
+				Text: fmt.Sprintf("The sum of %d and %d is %d", int(a), int(b), result),
+			},
+		},
+	}, nil
+}
+
+
+
 func main() {
 	flag.Parse()
 
@@ -100,13 +131,26 @@ func main() {
 		server.WithLogging(),
 	)
 
-	mcpServer.AddTool(mcp.NewTool("generateDiagram",
-		mcp.WithDescription("Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications"),
-		mcp.WithString("yamlContent",
+	// mcpServer.AddTool(mcp.NewTool("generatediagram",
+	// 	mcp.WithDescription("Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications"),
+	// 	mcp.WithString("yamlcontent",
+	// 		mcp.Required(),
+	// 		mcp.Description("Complete YAML specification for the AWS architecture diagram"),
+	// 	),
+	// ), handleGenerateDiagram)
+
+	mcpServer.AddTool(mcp.NewTool("gendiagram",
+		mcp.WithDescription("Add two numbers"),
+		mcp.WithNumber("a",
 			mcp.Required(),
-			mcp.Description("Complete YAML specification for the AWS architecture diagram"),
+			mcp.Description("First number to add"),
 		),
-	), handleGenerateDiagram)
+		mcp.WithNumber("b",
+			mcp.Required(),
+			mcp.Description("Second number to add"),
+		),
+	), handleAddTool)
+
 
 	streamableServer := server.NewStreamableHTTPServer(mcpServer, server.WithStateLess(true))
 
