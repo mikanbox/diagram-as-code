@@ -15,7 +15,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-var port = flag.String("port", "8080", "port to listen on")
+var port = flag.String("port", "8000", "port to listen on")
 
 func corsMiddleware(port string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
