@@ -158,6 +158,7 @@ OUTPUT: Base64-encoded PNG images suitable for embedding in responses`),
 	mcpServer.AddTool(mcp.NewTool(string(GENERATE_DIAGRAM),
 		mcp.WithDescription(GENERATE_DIAGRAM_DESC),
 		mcp.WithString("yamlContent",
+			mcp.Required(),
 			mcp.Description(`Complete YAML specification for the AWS architecture diagram.
 
 REQUIRED STRUCTURE:
@@ -190,7 +191,6 @@ COMMON RESOURCE TYPES:
 - AWS::ElasticLoadBalancingV2::LoadBalancer
 - AWS::RDS::DBInstance, AWS::S3::Bucket
 - AWS::Diagram::VerticalStack, AWS::Diagram::HorizontalStack for grouping`),
-			mcp.Required(),
 		),
 		mcp.WithString("outputFormat",
 			mcp.Description(`Output format for the generated diagram.
@@ -203,10 +203,24 @@ TECHNICAL DETAILS:
 - Typical resolution: 1200x800 pixels or larger depending on complexity
 - Uses official AWS icon set for professional appearance
 - Optimized for documentation and presentation use`),
-			mcp.DefaultString("png"),
-			mcp.Enum("png"),
 		),
 	), withPanicRecovery("generateDiagram", handleGenerateDiagram))
+
+	mcpServer.AddTool(mcp.NewTool(string(GENERATE_DIAGRAM_TO_FILE),
+		mcp.WithDescription(GENERATE_DIAGRAM_TO_FILE_DESC),
+		mcp.WithString("yamlContent",
+			mcp.Required(),
+			mcp.Description(`Complete YAML specification for the AWS architecture diagram (same format as generateDiagram)`),
+		),
+		mcp.WithString("outputFilePath",
+			mcp.Required(),
+			mcp.Description(`Path where the generated PNG file should be saved. Can be relative or absolute path. Parent directories will be created if they don't exist.`),
+		),
+	), withPanicRecovery("generateDiagramToFile", handleGenerateDiagramToFile))
+
+	mcpServer.AddTool(mcp.NewTool(string(GET_DIAGRAM_AS_CODE_FORMAT),
+		mcp.WithDescription(GET_FORMAT_DESC),
+	), withPanicRecovery("getDiagramAsCodeFormat", handleGenerateDacFromUserRequirements))
 
 	return mcpServer
 }
