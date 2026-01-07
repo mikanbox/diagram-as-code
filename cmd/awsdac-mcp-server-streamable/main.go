@@ -38,81 +38,9 @@ const (
 )
 
 const (
-	GENERATE_DIAGRAM_DESC = `Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications.
-
-DESCRIPTION:
-This tool creates professional PNG images of AWS architecture diagrams. The input YAML must follow the Diagram-as-code format with three main sections: DefinitionFiles, Resources, and optional Links.
-
-REQUIREMENTS:
-- You must run getDiagramAsCodeFormat before running this tool
-- You must support displaying base64 encoded images. A client that has been confirmed to support this is Cline.
-- YAML must include 'Diagram:' as root element
-- DefinitionFiles section must reference AWS icon definitions
-- Resources section must define hierarchical AWS resource structure  
-- Canvas resource is required as the root container
-
-FEATURES:
-- Supports all major AWS service icons and types
-- Handles complex layouts with grouping (VerticalStack/HorizontalStack)
-- Creates network connections and relationships via Links
-- Generates high-quality PNG output suitable for documentation
-
-USE CASE:
-Perfect for creating technical documentation, architecture reviews, and system design presentations.
-
-PREREQUISITE:
-Call 'getDiagramAsCodeFormat' first if you need format specification and examples.`
-
-	GENERATE_DIAGRAM_TO_FILE_DESC = `Generate AWS architecture diagrams from YAML and save directly to file.
-
-DESCRIPTION:
-This tool creates professional PNG images of AWS architecture diagrams and saves them directly to the specified file path. Unlike generateDiagram, this tool saves the image to the filesystem rather than returning base64 data.
-
-REQUIREMENTS:
-- You must run getDiagramAsCodeFormat before running this tool
-- You must NOT support displaying base64 encoded images. A client that has been confirmed to support this is Amazon Q.
-- YAML must follow the same Diagram-as-code format as generateDiagram
-- Valid file path with write permissions
-- Directory structure will be created if it doesn't exist
-
-FEATURES:
-- Same diagram generation capabilities as generateDiagram
-- Direct file system output for integration with file-based workflows
-- Automatic directory creation
-- Supports absolute file paths
-
-USE CASE:
-Perfect for automated workflows that need diagrams saved to specific locations, CI/CD pipelines, or batch processing scenarios.
-
-PREREQUISITE:
-Call 'getDiagramAsCodeFormat' first if you need format specification and examples.
-
-RECOMMENDATION:
-After saving the image to a file, follow the user's instructions to open the image file. Possible methods include opening an image viewer with the open command, or displaying it with img2sixel if your terminal supports it and libsixel is installed.
-`
-
-	GET_FORMAT_DESC = `Get comprehensive Diagram-as-code format specification, examples, and best practices.
-
-PURPOSE:
-Returns the complete documentation for creating YAML-based AWS architecture diagrams. This includes format specification, resource types, layout techniques, and practical examples.
-
-WHAT YOU GET:
-- Complete YAML schema and syntax rules
-- Available AWS resource types and their properties
-- Layout strategies (VerticalStack, HorizontalStack, grouping)
-- Link configuration for showing relationships
-- Best practices for creating beautiful, professional diagrams
-- Multiple working examples from simple to complex architectures
-
-WHEN TO USE:
-- Before creating your first diagram with generateDiagram
-- When you need reference for specific resource types or layouts
-- For understanding advanced features like orthogonal links and positioning
-- When troubleshooting YAML format issues
-
-OUTPUT:
-Extensive documentation including format rules, examples, and architectural guidance for creating effective AWS diagrams.
-`
+	GENERATE_DIAGRAM_DESC           = "Generate AWS architecture diagrams from YAML-based Diagram-as-code specifications."
+	GENERATE_DIAGRAM_TO_FILE_DESC   = "Generate AWS architecture diagrams from YAML and save directly to file."
+	GET_FORMAT_DESC                 = "Get Diagram-as-code format specification, examples, and best practices."
 )
 
 func NewMCPServer() *server.MCPServer {
@@ -159,50 +87,7 @@ OUTPUT: Base64-encoded PNG images suitable for embedding in responses`),
 		mcp.WithDescription(GENERATE_DIAGRAM_DESC),
 		mcp.WithString("yamlContent",
 			mcp.Required(),
-			mcp.Description(`Complete YAML specification for the AWS architecture diagram.
-
-REQUIRED STRUCTURE:
-Diagram:
-  DefinitionFiles:
-    - Type: URL
-      Url: https://raw.githubusercontent.com/awslabs/diagram-as-code/main/definitions/definition-for-aws-icons-light.yaml
-  Resources:
-    Canvas:
-      Type: AWS::Diagram::Canvas
-      Children:
-        - AWSCloud
-    AWSCloud:
-      Type: AWS::Diagram::Cloud
-      Children:
-        - [your AWS resources]
-  Links: # Optional
-    - Source: ResourceA
-      Target: ResourceB
-
-VALIDATION RULES:
-- Must be valid YAML syntax
-- Must contain Diagram, DefinitionFiles, and Resources sections
-- Canvas must be the root resource with Children
-- All resources must be reachable from Canvas
-- Link sources and targets must reference existing resources
-
-COMMON RESOURCE TYPES:
-- AWS::EC2::VPC, AWS::EC2::Subnet, AWS::EC2::Instance
-- AWS::ElasticLoadBalancingV2::LoadBalancer
-- AWS::RDS::DBInstance, AWS::S3::Bucket
-- AWS::Diagram::VerticalStack, AWS::Diagram::HorizontalStack for grouping`),
-		),
-		mcp.WithString("outputFormat",
-			mcp.Description(`Output format for the generated diagram.
-
-SUPPORTED FORMATS:
-- "png" (default): High-quality PNG image with transparency support
-
-TECHNICAL DETAILS:
-- Output is base64-encoded for easy embedding
-- Typical resolution: 1200x800 pixels or larger depending on complexity
-- Uses official AWS icon set for professional appearance
-- Optimized for documentation and presentation use`),
+			mcp.Description("Complete YAML specification for the AWS architecture diagram"),
 		),
 	), withPanicRecovery("generateDiagram", handleGenerateDiagram))
 
@@ -210,11 +95,11 @@ TECHNICAL DETAILS:
 		mcp.WithDescription(GENERATE_DIAGRAM_TO_FILE_DESC),
 		mcp.WithString("yamlContent",
 			mcp.Required(),
-			mcp.Description(`Complete YAML specification for the AWS architecture diagram (same format as generateDiagram)`),
+			mcp.Description("Complete YAML specification for the AWS architecture diagram"),
 		),
 		mcp.WithString("outputFilePath",
 			mcp.Required(),
-			mcp.Description(`Path where the generated PNG file should be saved. Can be relative or absolute path. Parent directories will be created if they don't exist.`),
+			mcp.Description("Path where the generated PNG file should be saved"),
 		),
 	), withPanicRecovery("generateDiagramToFile", handleGenerateDiagramToFile))
 
@@ -479,3 +364,4 @@ func main() {
 		log.Fatalf("Server error: %v", err)
 	}
 }
+
